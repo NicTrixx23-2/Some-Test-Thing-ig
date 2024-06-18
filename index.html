@@ -23,29 +23,20 @@
         <canvas id="canvas" width="300" height="300"></canvas>
         <div id="controls">
             <button id="clear">Clear Drawing</button>
+            <button id="recognize">Recognize</button>
         </div>
     </div>
     <div id="mathArea">
-        <p>Write or draw a mathematical expression:</p>
-        <div id="math-field"></div>
-        <button onclick="recognizeMath()">Recognize</button>
-        <h2>Recognition Output</h2>
+        <p>Recognized Math Expression:</p>
         <div id="output"></div>
     </div>
 
-    <script src="https://unpkg.com/mathlive/dist/mathlive.min.js"></script>
     <script>
         const canvas = document.getElementById('canvas');
         const context = canvas.getContext('2d');
         context.lineWidth = 5;
         context.lineCap = 'round';
         let drawing = false;
-
-        // MathLive setup
-        const mathField = MathLive.makeMathField('math-field', {
-            virtualKeyboardMode: 'manual',
-            smartMode: true
-        });
 
         // Drawing functionality
         function startDrawing(event) {
@@ -98,11 +89,27 @@
             context.clearRect(0, 0, canvas.width, canvas.height);
         });
 
-        // Math recognition
+        // Recognize button
+        const recognizeButton = document.getElementById('recognize');
+        recognizeButton.addEventListener('click', recognizeMath);
+
         function recognizeMath() {
-            const mathExpression = mathField.$text();
-            document.getElementById('output').innerText = 'Recognized Expression: ' + mathExpression;
-            mathField.$clear();
+            const imageData = canvas.toDataURL(); // Get the image data as base64
+
+            fetch('/recognize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: imageData }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('output').innerText = data.expression;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
         }
     </script>
 </body>
